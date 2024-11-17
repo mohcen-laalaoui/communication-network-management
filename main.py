@@ -1,12 +1,10 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-import random
-import time
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox
-from tools.bellman_ford import bellman_ford
 from tools.dijekstra import dijkstra
+from tools.bellman_ford import bellman_ford
+import random
 
 def create_network():
     G = nx.DiGraph()
@@ -30,48 +28,6 @@ def visualize_network(G, title="Network Graph"):
     plt.title(title)
     plt.show()
 
-def find_shortest_path_dijkstra(G, source, target):
-    graph_dict = {node: {neighbor: G[node][neighbor]['weight'] for neighbor in G.neighbors(node)} for node in G.nodes}
-    start_time = time.time()
-    try:
-        shortest_paths, _, response_time = dijkstra(graph_dict, source)
-        path = reconstruct_path(source, target, shortest_paths)
-        path_length = shortest_paths[target]
-        end_time = time.time()
-        print(f"Shortest path using Dijkstra from {source} to {target}: {path}")
-        print(f"Total path cost: {path_length}")
-        print(f"Response time: {response_time:.6f} seconds")
-    except KeyError:
-        print(f"No path found from {source} to {target}.")
-
-def reconstruct_path(source, target, previous_nodes):
-    path = []
-    current = target
-    while current != source:
-        if current not in previous_nodes:
-            return None
-        path.append(current)
-        current = previous_nodes[current]
-    path.append(source)
-    return path[::-1]
-
-def handle_variable_connections_bellman_ford(G, edges):
-    graph_dict = {node: {neighbor: G[node][neighbor]['weight'] for neighbor in G.neighbors(node)} for node in G.nodes}
-    for edge in edges:
-        if G.has_edge(*edge):
-            new_weight = random.randint(1, 15)
-            G[edge[0]][edge[1]]['weight'] = new_weight
-            print(f"Updated weight for edge {edge}: {new_weight}")
-    start_time = time.time()
-    try:
-        distances, _, response_time = bellman_ford(graph_dict, 1)
-        end_time = time.time()
-        print("Shortest paths using Bellman-Ford from node 1:", distances)
-        print(f"Response time: {response_time:.6f} seconds")
-    except ValueError as e:
-        print(e)
-    visualize_network(G, title="Network with Variable Weights")
-
 def simulate_failure(G, edge):
     if G.has_edge(*edge):
         G.remove_edge(*edge)
@@ -85,7 +41,7 @@ class NetworkSimulatorApp:
         self.master = master
         self.master.title("Network Simulation")
         self.master.geometry("600x500")
-        self.master.config(bg="#FFFFFF")
+        self.master.config(bg="#ADD8E6")
         self.G = create_network()
         self.create_widgets()
 
@@ -110,16 +66,21 @@ class NetworkSimulatorApp:
         visualize_network(self.G)
 
     def run_dijkstra(self):
-        find_shortest_path_dijkstra(self.G, source=1, target=5)
+        result = dijkstra(self.G, source=1, target=5)
+        print(result)
 
     def run_bellman_ford(self):
-        handle_variable_connections_bellman_ford(self.G, edges=[(1, 2), (3, 4), (4, 5)])
+        updates, self.G = bellman_ford(self.G, edges=[(1, 2), (3, 4), (4, 5)])
+        for update in updates:
+            print(update)
 
     def simulate_failure(self):
         simulate_failure(self.G, edge=(2, 4))
 
     def simulate_variable_weights(self):
-        handle_variable_connections_bellman_ford(self.G, edges=[(1, 2), (3, 4), (4, 5)])
+        updates, self.G = bellman_ford(self.G, edges=[(1, 2), (3, 4), (4, 5)])
+        for update in updates:
+            print(update)
 
 if __name__ == "__main__":
     root = tk.Tk()
